@@ -1,0 +1,33 @@
+(version 1)
+; Model-written code runs under this profile (each control is probed by tests/test_evaluator.py).
+(allow default)
+; No network, no macOS service lookups (clipboard, keychain agents and the rest), no POSIX IPC.
+(deny network*)
+(deny mach-lookup)
+(deny ipc-posix*)
+; No signals to any other process (the evaluator, other runs, anything else of the user's).
+(deny signal)
+(allow signal (target self))
+; No inspecting other processes or opening device drivers. (macOS still lets a process read
+; the arguments of other processes run by the SAME user; only a separate user closes that.)
+(deny process-info*)
+(allow process-info* (target self))
+(deny iokit-open)
+; Writes only into this run's scratch folder; the source snapshot and the harness are read-only.
+(deny file-write*)
+(allow file-write* (subpath (param "SCRATCH")) (literal "/dev/null"))
+; No reading, listing or even stat-ing personal or shared user data: every home folder, the
+; per-user temp tree (other runs, other apps), /tmp, external volumes, system keychains.
+; Only this run's source snapshot (no .git), harness and scratch folder are visible there.
+(deny file-read-data file-read-metadata
+  (subpath "/Users") (subpath "/private/var/folders") (subpath "/var/folders") (subpath "/private/tmp")
+  (subpath "/tmp") (subpath "/private/var/tmp") (subpath "/var/tmp") (subpath "/Volumes")
+  (subpath "/private/var/root") (subpath "/Library/Keychains")
+  (subpath "/usr/local") (subpath "/opt/homebrew/var") (subpath "/opt/homebrew/etc")
+  (subpath "/Library/Application Support"))
+(allow file-read-data file-read-metadata
+  (subpath (param "SRC")) (subpath (param "HARNESS")) (subpath (param "SCRATCH")))
+; No new processes: only the Python interpreter (and Homebrew's Python.app it hands off to).
+(deny process-fork)
+(deny process-exec*)
+(allow process-exec (literal (param "PYTHON")) (literal (param "PYAPP")))

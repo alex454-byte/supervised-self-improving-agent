@@ -1,0 +1,28 @@
+(version 1)
+; The reviewer model's CLI (claude, run with no tools) runs under this profile (bin/llm_call.py):
+; it may reach the network (its API), its own install folder, its own login and state in
+; ~/.claude and ~/.claude.json, and an empty working folder, and nothing else of the user's.
+; Its login is in the keychain, so it may READ ~/Library/Keychains (macOS still asks each item's
+; access list); it may start only itself and /usr/bin/security. Its temp folder is the work
+; folder (CLAUDE_CODE_TMPDIR), not /tmp/claude-<uid>, which holds other Claude sessions' files.
+(allow default)
+(deny file-read-data file-read-metadata
+  (subpath "/Users") (subpath "/private/var/folders") (subpath "/var/folders") (subpath "/private/tmp")
+  (subpath "/tmp") (subpath "/private/var/tmp") (subpath "/var/tmp") (subpath "/Volumes")
+  (subpath "/private/var/root") (subpath "/Library/Keychains") (subpath "/usr/local")
+  (subpath "/opt/homebrew/var") (subpath "/opt/homebrew/etc") (subpath "/Library/Application Support"))
+(allow file-read-metadata (literal "/Users") (literal (param "HOME_DIR")))
+(allow file-read-data file-read-metadata
+  (subpath (param "CLAUDE_DIR")) (regex (param "CLAUDE_JSON")) (subpath (param "CLI_DIR")) (subpath (param "WORK")))
+(allow file-read-metadata (literal (string-append (param "HOME_DIR") "/Library")))
+(allow file-read-data file-read-metadata (subpath (string-append (param "HOME_DIR") "/Library/Keychains")))
+(deny file-write*)
+(allow file-write* (subpath (param "CLAUDE_DIR")) (regex (param "CLAUDE_JSON")) (subpath (param "WORK"))
+  (literal "/dev/null"))
+(deny process-exec*)
+(allow process-exec (literal (param "CLI")) (literal "/usr/bin/security"))
+(deny signal)
+(allow signal (target self))
+(deny process-info*)
+(allow process-info* (target self))
+(deny iokit-open)

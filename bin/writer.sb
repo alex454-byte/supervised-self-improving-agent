@@ -1,0 +1,24 @@
+(version 1)
+; The writer model's CLI runs under this profile (bin/llm_call.py): it may reach the network
+; (its API) and its own login and state in ~/.codex, and nothing else of the user's. Its file
+; and shell tools therefore see only an empty working folder, and it cannot start programs.
+(allow default)
+(deny file-read-data file-read-metadata
+  (subpath "/Users") (subpath "/private/var/folders") (subpath "/var/folders") (subpath "/private/tmp")
+  (subpath "/tmp") (subpath "/private/var/tmp") (subpath "/var/tmp") (subpath "/Volumes")
+  (subpath "/private/var/root") (subpath "/Library/Keychains") (subpath "/usr/local")
+  (subpath "/opt/homebrew/var") (subpath "/opt/homebrew/etc") (subpath "/Library/Application Support"))
+(allow file-read-metadata (literal "/Users") (literal (param "HOME_DIR")))
+(allow file-read-data file-read-metadata (subpath (param "CODEX_HOME")) (subpath (param "WORK")))
+(deny file-write*)
+(allow file-write* (subpath (param "CODEX_HOME")) (subpath (param "WORK")) (literal "/dev/null"))
+(deny process-exec*)
+(allow process-exec (literal (param "CLI")))
+(deny signal)
+(allow signal (target self))
+; No process inspection or device drivers. Mach lookups and POSIX IPC stay: the CLI needs
+; name resolution and its managed preferences (probed: denying IPC stops it loading its
+; configuration). A separate agent OS user is the closure there.
+(deny process-info*)
+(allow process-info* (target self))
+(deny iokit-open)

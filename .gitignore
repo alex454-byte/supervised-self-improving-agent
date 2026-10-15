@@ -1,0 +1,6 @@
+# Runtime data: the ledger, cooldowns, run folders and PR drafts never go in git.
+state/
+__pycache__/
+*.pyc
+.env
+*.pem
